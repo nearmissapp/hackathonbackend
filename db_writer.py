@@ -193,7 +193,7 @@ class DatabaseManager:
                 cursor.close()
                 self.disconnect()
 
-    def fetch_by_manager(self, manager, limit=3):
+    def fetch_by_manager(self, manager, limit=4):
         """주어진 manager로 데이터베이스에서 image_compressed_base64, comment, created_at, status, id를 조회하고 JSON으로 반환합니다."""
         try:
             self.connect()

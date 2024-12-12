@@ -7,6 +7,8 @@ from db_writer import DatabaseManager
 from notification_sender import NotificationSender
 import os  # os 모듈 추가
 from datetime import datetime
+import io
+import base64
 
 # 에러 처리 함수
 def handle_error(message, exception=None):
@@ -142,74 +144,90 @@ def send_notification(hazard_response, to_email, cc_email, id):
     notification_sender.send_email(data=hazard_response, to_email=to_email, cc_email=cc_email)
     notification_sender.send_teams(data=hazard_response, id=id)
 
-
-
-
-
-
-
-
 if __name__ == "__main__":
-    print("=== 잠재위험 신고 프로그램 ===")
+    print("=== 잠재위험 신고 프로그램 테스트 ===")
+    
+    # 테스트 데이터 설정
     comment = "위험 신고합니다."
     location = "포스코 포항제철소"
-    reporter = "report seok.jw@posco.com"
-
-    notification_sender = NotificationSender()
-
+    reporter = "seok.jw@posco.com"
+    caller_ip = "127.0.0.1"  # 테스트용 IP
+    
+    # 테스트할 이미지 파일들에 대해 반복
     for i in range(1, 11):
-        file_name = f"test{i}"  # file_name을 test1부터 test10까지 설정
-        file_path = complete_file_path(file_name)  # file_path를 complete_file_path 함수로 설정
-
-        # 초기 데이터베이스 저장
-        initial_data = {
-            "comment": comment,
-            "location": location,
-            "reporter": reporter
-        }
-        id = save_to_database(initial_data, id=-1)
-
-        # Step 1: 이미지 읽기 및 클래스 초기화
-        print(f"Step 1: 이미지 읽기 및 클래스 초기화 시작 - {file_name}")
-        image, save_path, processor = initialize_processor_and_load_image(file_path)
-        print("Step 1 완료: 이미지 및 프로세서 초기화 완료")
-
-        # Step 2: 이미지 분석 실행
-        print("Step 2: 이미지 분석 실행 시작")
-        analysis_response, image_base64 = analyze_image(processor, save_path, comment, location)
-        print("Step 2 완료: 이미지 분석 결과")
-        print(analysis_response)
-
-        # Step 3: 분석 결과를 JSON 변환
-        print("Step 3: 분석 결과를 JSON 변환 시작")
-        json_response = convert_analysis_to_json(processor, analysis_response)
-        print("Step 3 완료: JSON 변환 결과")
-        print(json_response)
-
-        # Step 4: 담당자 및 관련 문서 탐색
-        print("Step 4: 담당자 및 관련 문서 탐색 시작")
-        hazard_response = retrieve_information(processor, json_response)
-        print("Step 4 완료: 탐색 결과")
-        print(hazard_response)
-
-        # Step 5: 사진 및 기타 정보 입력
-        print("Step 5: 신고자 정보 및 사진 정보 입력 시작")
-        hazard_response = add_info_to_response(hazard_response, reporter, image_base64)
-        print("Step 5 완료: 신고자 정보 및 사진 정보 입력 완료")
-
-        # Step 6: 데이터베이스에 저장 (업데이트)
-        print("Step 6: 데이터베이스에 저장 시작")
-        save_to_database(hazard_response, id=id)
-        print("Step 6 완료: 데이터베이스 저장 완료")
-
-        # Step 7: 알림 전송
-        print("Step 7: 알림 전송 시작")
-        send_notification(hazard_response, to_email=["seok.jw@posco.com"], cc_email=[], id=id)
-        print("Step 7 완료: 알림 전송 완료")
-
-        # 결과 확인 (출력을 위해 base64 길이 줄임)
-        print("\n=== 결과 확인 ===")
-        hazard_response_copy = hazard_response.copy()
-        hazard_response_copy["image_base64"] = hazard_response_copy["image_base64"][:20] + "..."
-        print(json.dumps(hazard_response_copy, indent=4, ensure_ascii=False))
+        try:
+            file_name = f"test{i}"
+            file_path = complete_file_path(file_name)
+            
+            # 초기 데이터베이스 저장
+            initial_data = {
+                "comment": comment,
+                "location": location,
+                "reporter": reporter
+            }
+            id = save_to_database(initial_data, id=-1)
+            
+            # Step 1: 이미지 읽기 및 클래스 초기화
+            print(f"테스트 {i} | Step 1: 이미지 읽기 및 클래스 초기화")
+            image, save_path, processor = initialize_processor_and_load_image(file_path)
+            
+            # Step 2: 이미지 분석 실행
+            print(f"테스트 {i} | Step 2: 이미지 분석 실행")
+            analysis_response, image_base64 = analyze_image(processor, save_path, comment, location)
+            
+            # Step 3: 분석 결과를 JSON 변환
+            print(f"테스트 {i} | Step 3: 분석 결과를 JSON 변환")
+            json_response = convert_analysis_to_json(processor, analysis_response)
+            
+            # Step 4: 담당자 및 관련 문서 탐색
+            print(f"테스트 {i} | Step 4: 담당자 및 관련 문서 탐색")
+            hazard_response = retrieve_information(processor, json_response)
+            print(hazard_response)
+            
+            # "기타" 분류 확인
+            if hazard_response.get("content", {}).get("potentialRisk") == "기타":
+                print(f"테스트 {i} | '기타' 분류로 인해 처리 중단")
+                continue
+            
+            # Step 5: 이미지 압축 및 정보 입력
+            print(f"테스트 {i} | Step 5: 사진 및 기타 정보 입력")
+            # 이미지 압축 로직
+            def encode_image_to_base64(image_path, max_size=1024):
+                with open(image_path, "rb") as image_file:
+                    image = Image.open(image_file)
+                    width, height = image.size
+                    
+                    if width > max_size or height > max_size:
+                        if width > height:
+                            new_width = max_size
+                            new_height = int((max_size / width) * height)
+                        else:
+                            new_height = max_size
+                            new_width = int((max_size / height) * width)
+                        image = image.resize((new_width, new_height), Image.LANCZOS)
+                    
+                    if image.mode == 'RGBA':
+                        image = image.convert('RGB')
+                        
+                    with io.BytesIO() as output:
+                        image.save(output, format="JPEG")
+                        return base64.b64encode(output.getvalue()).decode("utf-8")
+            
+            image_compressed_base64 = encode_image_to_base64(save_path, 400)
+            hazard_response = add_info_to_response(hazard_response, reporter, image_base64, image_compressed_base64)
+            
+            # Step 6: 데이터베이스에 저장
+            print(f"테스트 {i} | Step 6: 데이터베이스에 저장")
+            save_to_database(hazard_response, id=id)
+            
+            # Step 7: 알림 전송
+            print(f"테스트 {i} | Step 7: 알림 전송")
+            manager = [hazard_response.get("manager", {}).get("email", "None")]
+            send_notification(hazard_response, to_email=["seok.jw@posco.com"], cc_email=[], id=id)
+            
+            print(f"테스트 {i} | 처리 완료\n")
+            
+        except Exception as e:
+            print(f"테스트 {i} | 오류 발생: {str(e)}")
+            continue
 

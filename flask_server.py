@@ -186,12 +186,14 @@ def analyze_image_api():
         print("API_call-gpt | 종료")
         return jsonify({"error": str(e)}), 500
 
-@app.route('/list-reporter', methods=['GET'])
+@app.route('/list-reporter', methods=['POST'])
 def list_reporter():
     try:
         print("API_list-reporter | Step 0: list-reporter api 응답")
         # 요청에서 reporter(email) 가져오기
         reporter = request.form.get('reporter')
+        print(request.form)
+        print(reporter)
         if not reporter:
             logger.warning("API_list-reporter | No reporter provided for login")
             print("API_list-reporter | 종료")
@@ -209,11 +211,12 @@ def list_reporter():
         print("API_update-status | 종료")
         return jsonify({"error": str(e)}), 500
 
-@app.route('/list-manager', methods=['GET'])
+@app.route('/list-manager', methods=['POST'])
 def list_manager():
     try:
         print("API_list-manager | Step 0: list-manager api 응답")
         # 요청에서 reporter(email) 가져오기
+        print(request.form)
         manager = request.form.get('manager')
         if not manager:
             logger.warning("API_list-manager | No manager provided for login")
@@ -222,6 +225,7 @@ def list_manager():
 
         # fetch_manager_data 함수 호출
         results_json = fetch_manager_data(manager)
+        print(len(results_json), results_json)
 
         # 결과 반환
         print("API_list-manager | 종료")
@@ -271,10 +275,14 @@ def login():
         email = request.form.get('email')
         password = request.form.get('password')
 
+        print(request.form)
+        print(email, password)
+    
         if not email or not password:
             logger.warning("API_login | 이메일 또는 비밀번호가 제공되지 않았습니다")
             return jsonify({"error": "이메일과 비밀번호가 필요합니다."}), 400
 
+        ###### 비밀번호 체크는 구현하지 않음 ######
         type = fetch_user_data(email)
         
         if type:
