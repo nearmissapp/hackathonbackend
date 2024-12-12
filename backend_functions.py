@@ -135,7 +135,7 @@ def update_report_status(report_id, reporter, new_status):
 def get_current_status(report_id, reporter):
     """주어진 보고서 ID와 reporter의 현재 상태를 조회합니다."""
     db_manager = DatabaseManager()
-    return db_manager.get_current_status(report_id, reporter)
+    return db_manager.current_status(report_id, reporter)
 
 # Step 7: 알림 전송 (이메일, 팀즈)
 def send_notification(hazard_response, to_email, cc_email, id):

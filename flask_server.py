@@ -131,6 +131,10 @@ def background_task(file_path, caller_ip, reporter, comment, location, id):
 def analyze_image_api():
     try:
         print("API_call-gpt | Step 0: call-gpt api 응답")
+
+        print(request.form)
+        print(request.files)
+
         caller_ip = request.remote_addr
         logger.info(f"API_call-gpt | API call received - Caller IP: {caller_ip}")
 
@@ -216,7 +220,7 @@ def list_manager():
     try:
         print("API_list-manager | Step 0: list-manager api 응답")
         # 요청에서 reporter(email) 가져오기
-        print(request.form)
+        # print(request.form)
         manager = request.form.get('manager')
         if not manager:
             logger.warning("API_list-manager | No manager provided for login")
@@ -225,8 +229,6 @@ def list_manager():
 
         # fetch_manager_data 함수 호출
         results_json = fetch_manager_data(manager)
-        print(len(results_json), results_json)
-
         # 결과 반환
         print("API_list-manager | 종료")
         return jsonify({"data": json.loads(results_json)}), 200
@@ -235,15 +237,16 @@ def list_manager():
         logger.error(f"API_list-manager | Unexpected error in login API: {str(e)}")
         print("API_list-manager | 종료")
         return jsonify({"error": str(e)}), 500
-
+    
 @app.route('/update-status', methods=['PATCH'])
 def update_status():
     try:
         print("API_update-status | Step 0: update-status api 응답")
         # 요청에서 id와 manager 가져오기
-        report_id = request.form.get('id')
-        manager = request.form.get('manager')
-        
+
+        report_id = request.get_json().get('id')
+        manager = request.get_json().get('manager')
+        print(report_id, manager)
         if not report_id or not manager:
             print("API_update-status | 종료")
             logger.warning("API_update-status | Report ID and manager are required for status update")
@@ -251,9 +254,14 @@ def update_status():
 
         # 현재 상태 확인
         current_status = get_current_status(report_id, manager)
+        print(current_status)
         if current_status == "completed":
-            print("API_update-status | 종료")
+            print("API_update-status | 이미 completed 상태이므로 종료")
             return jsonify({"message": "Status is already completed."}), 300
+        
+        if current_status == None:
+            print("API_update-status | id와 manager가 일치하지 않아 종료")
+            return jsonify({"error": "id and manager are not matched."}), 300
 
         # 상태 업데이트 수행
         update_success = update_report_status(report_id, manager, "completed")

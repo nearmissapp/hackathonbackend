@@ -106,8 +106,8 @@ class DatabaseManager:
             document_title = data.get("documents", {}).get("title", None)
             document_summary = data.get("documents", {}).get("document_summary", None)
             image_base64 = 'data:image/jpeg;base64,'+ data.get("image_base64", None)
-            updated_at = datetime.now()
-            updated_by = data.get("reporter", None)
+            updated_at = None
+            updated_by = None
             action_taken = False
             image_compressed_base64 = 'data:image/jpeg;base64,'+ data.get("image_compressed_base64", None)
             
@@ -207,7 +207,6 @@ class DatabaseManager:
             """
             cursor.execute(select_query, (manager, limit))
             results = cursor.fetchall()
-
             # 결과를 JSON 형식으로 변환 (ensure_ascii=False 추가)
             results_json = json.dumps([
                 {
@@ -219,8 +218,7 @@ class DatabaseManager:
                 }
                 for id, comment, created_at, status, image_compressed_base64 in results
             ], ensure_ascii=False)  # ensure_ascii=False 추가
-            #print(results_json)
-            
+
             return results_json
 
         except Exception as e:
@@ -231,22 +229,21 @@ class DatabaseManager:
                 cursor.close()
                 self.disconnect()
 
-    def update_status(self, report_id, reporter, new_status):
+    def update_status(self, report_id, manager, new_status):
         """주어진 보고서 ID와 reporter의 상태를 업데이트합니다."""
         try:
             self.connect()
             cursor = self.connection.cursor()
             update_query = """
             UPDATE report
-            SET status = %s, updated_at = %s
-            WHERE id = %s AND created_by = %s
+            SET status = %s, updated_at = %s, updated_by = %s
+            WHERE id = %s AND manager_email = %s
             """
             updated_at = datetime.now()
             
             # 데이터베이스 업데이트
-            cursor.execute(update_query, (new_status, updated_at, report_id, reporter))
+            cursor.execute(update_query, (new_status, updated_at, manager, report_id, manager))
             self.connection.commit()
-            # print("상태 업데이트 완료", report_id, reporter, new_status)
             return cursor.rowcount > 0  # 업데이트된 행이 있는지 확인
 
         except Exception as e:
@@ -257,17 +254,17 @@ class DatabaseManager:
                 cursor.close()
                 self.disconnect()
 
-    def get_current_status(self, report_id, reporter):
-        """주어진 보고서 ID와 reporter의 현재 상태를 조회합니다."""
+    def current_status(self, report_id, manager):
+        """주어진 보고서 ID와 manager의 현재 상태를 조회합니다."""
         try:
             self.connect()
             cursor = self.connection.cursor()
             select_query = """
             SELECT status
             FROM report
-            WHERE id = %s AND created_by = %s
+            WHERE id = %s AND manager_email = %s
             """
-            cursor.execute(select_query, (report_id, reporter))
+            cursor.execute(select_query, (report_id, manager))
             result = cursor.fetchone()
             return result[0] if result else None
 
