@@ -194,12 +194,12 @@ class DatabaseManager:
                 self.disconnect()
 
     def fetch_by_manager(self, manager, limit=4):
-        """주어진 manager로 데이터베이스에서 image_compressed_base64, comment, created_at, status, id를 조회하고 JSON으로 반환합니다."""
+        """주어진 manager로 데이터베이스에서 데이터를 조회하고 JSON으로 반환합니다."""
         try:
             self.connect()
             cursor = self.connection.cursor()
             select_query = """
-            SELECT id, comment, created_at, status, image_compressed_base64
+            SELECT id, comment, created_at, status, image_compressed_base64, location, mitigation_plan
             FROM report
             WHERE manager_email = %s
             ORDER BY created_at DESC
@@ -207,23 +207,25 @@ class DatabaseManager:
             """
             cursor.execute(select_query, (manager, limit))
             results = cursor.fetchall()
-            # 결과를 JSON 형식으로 변환 (ensure_ascii=False 추가)
+            # 결과를 JSON 형식으로 변환
             results_json = json.dumps([
                 {
                     "id": id,
                     "comment": comment,
                     "created_at": created_at.isoformat(),
                     "status": status,
-                    "image_compressed_base64": image_compressed_base64
+                    "image_compressed_base64": image_compressed_base64,
+                    "location": location,
+                    "mitigation_plan": mitigation_plan
                 }
-                for id, comment, created_at, status, image_compressed_base64 in results
-            ], ensure_ascii=False)  # ensure_ascii=False 추가
+                for id, comment, created_at, status, image_compressed_base64, location, mitigation_plan in results
+            ], ensure_ascii=False)
 
             return results_json
 
         except Exception as e:
             print(f"데이터 조회 중 오류 발생: {e}")
-            return json.dumps([], ensure_ascii=False)  # ensure_ascii=False 추가
+            return json.dumps([], ensure_ascii=False)
         finally:
             if self.connection:
                 cursor.close()

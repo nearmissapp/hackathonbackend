@@ -118,7 +118,7 @@ def background_task(file_path, caller_ip, reporter, comment, location, id):
         print("API_call-gpt | Step 7: 알림 전송")
         manager = [hazard_response.get("manager", {}).get("email", "None")]
         hackathon_members = ["seok.jw@posco.com", "ebazy@posco.com", "seongjuhong@posco.com","ysm2691@posco.com","mhcoc@poscosteeleon.com"]
-        send_notification(hazard_response, to_email=["seok.jw@posco.com"], cc_email=[], id=id)
+        send_notification(hazard_response, to_email=["pyramid629@gmail.com"], cc_email=hackathon_members, id=id)
         logger.info(f"Notification sent - Caller IP: {caller_ip}")
 
         # 종료
