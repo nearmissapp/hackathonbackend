@@ -1,6 +1,5 @@
 # flask_server.py
 
-
 import base64
 from PIL import Image
 import io
@@ -31,7 +30,8 @@ from datetime import datetime
 import threading
 
 app = Flask(__name__)
-CORS(app)
+# CORS 설정 수정
+CORS(app, resources={r"*": {"origins": "*"}})
 
 # 로그 설정
 file_handler = FileHandler('app.log', encoding='utf-8')
@@ -131,10 +131,8 @@ def background_task(file_path, caller_ip, reporter, comment, location, id):
 def analyze_image_api():
     try:
         print("API_call-gpt | Step 0: call-gpt api 응답")
-
         print(request.form)
         print(request.files)
-
         caller_ip = request.remote_addr
         logger.info(f"API_call-gpt | API call received - Caller IP: {caller_ip}")
 
@@ -148,19 +146,19 @@ def analyze_image_api():
         reporter = request.form.get('reporter')
         if not reporter:
             logger.warning(f"API_call-gpt | No reporter provided - Caller IP: {caller_ip}")
-            return jsonify({"error": "Reporter is required."}), 400
+            return jsonify({"error": "Reporter is required."}), 401
 
         # comment 받기
         comment = request.form.get('comment')
         if not comment:
             logger.warning(f"API_call-gpt | No comment provided - Caller IP: {caller_ip}")
-            return jsonify({"error": "Comment is required."}), 400
+            return jsonify({"error": "Comment is required."}), 402
 
         # location 받기
         location = request.form.get('location')
         if not location:
             logger.warning(f"API_call-gpt | No location provided - Caller IP: {caller_ip}")
-            return jsonify({"error": "Location is required."}), 400
+            return jsonify({"error": "Location is required."}), 403
 
         # 이미지 저장
         original_file_name = image_file.filename
@@ -196,8 +194,7 @@ def list_reporter():
         print("API_list-reporter | Step 0: list-reporter api 응답")
         # 요청에서 reporter(email) 가져오기
         reporter = request.form.get('reporter')
-        print(request.form)
-        print(reporter)
+
         if not reporter:
             logger.warning("API_list-reporter | No reporter provided for login")
             print("API_list-reporter | 종료")
@@ -219,8 +216,7 @@ def list_reporter():
 def list_manager():
     try:
         print("API_list-manager | Step 0: list-manager api 응답")
-        # 요청에서 reporter(email) 가져오기
-        # print(request.form)
+
         manager = request.form.get('manager')
         if not manager:
             logger.warning("API_list-manager | No manager provided for login")
@@ -254,7 +250,7 @@ def update_status():
 
         # 현재 상태 확인
         current_status = get_current_status(report_id, manager)
-        print(current_status)
+
         if current_status == "completed":
             print("API_update-status | 이미 completed 상태이므로 종료")
             return jsonify({"message": "Status is already completed."}), 300
@@ -283,9 +279,6 @@ def login():
         email = request.form.get('email')
         password = request.form.get('password')
 
-        print(request.form)
-        print(email, password)
-    
         if not email or not password:
             logger.warning("API_login | 이메일 또는 비밀번호가 제공되지 않았습니다")
             return jsonify({"error": "이메일과 비밀번호가 필요합니다."}), 400
