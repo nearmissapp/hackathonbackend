@@ -59,6 +59,7 @@ class NotificationSender:
                     width: 30%;
                 }}
             </style>
+            
         </head>
         <body>
             <div class="header">잠재위험 신고 알림</div>

@@ -214,6 +214,7 @@ def list_reporter():
 
 @app.route('/list-manager', methods=['POST'])
 def list_manager():
+    """제일 최근 4건의 db조회 리턴"""
     try:
         print("API_list-manager | Step 0: list-manager api 응답")
 

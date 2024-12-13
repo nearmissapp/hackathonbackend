@@ -170,7 +170,7 @@ class DatabaseManager:
             """
             cursor.execute(select_query, (reporter, limit))
             results = cursor.fetchall()
-
+  
             # 결과를 JSON 형식으로 변환 (ensure_ascii=False 추가)
             results_json = json.dumps([
                 {
@@ -201,13 +201,12 @@ class DatabaseManager:
             select_query = """
             SELECT id, comment, created_at, status, image_compressed_base64, location, mitigation_plan
             FROM report
-            WHERE manager_email = %s
             ORDER BY created_at DESC
             LIMIT %s
             """
-            cursor.execute(select_query, (manager, limit))
+            cursor.execute(select_query, (limit,))
             results = cursor.fetchall()
-            # 결과를 JSON 형식으로 변환
+            # 결과를 JSON 형식으로 변환 (거꾸로 순회)
             results_json = json.dumps([
                 {
                     "id": id,
@@ -220,7 +219,6 @@ class DatabaseManager:
                 }
                 for id, comment, created_at, status, image_compressed_base64, location, mitigation_plan in results
             ], ensure_ascii=False)
-
             return results_json
 
         except Exception as e:
