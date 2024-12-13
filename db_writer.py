@@ -237,12 +237,12 @@ class DatabaseManager:
             update_query = """
             UPDATE report
             SET status = %s, updated_at = %s, updated_by = %s
-            WHERE id = %s AND manager_email = %s
+            WHERE id = %s
             """
             updated_at = datetime.now()
             
             # 데이터베이스 업데이트
-            cursor.execute(update_query, (new_status, updated_at, manager, report_id, manager))
+            cursor.execute(update_query, (new_status, updated_at, manager, report_id,))
             self.connection.commit()
             return cursor.rowcount > 0  # 업데이트된 행이 있는지 확인
 
@@ -262,9 +262,9 @@ class DatabaseManager:
             select_query = """
             SELECT status
             FROM report
-            WHERE id = %s AND manager_email = %s
+            WHERE id = %s
             """
-            cursor.execute(select_query, (report_id, manager))
+            cursor.execute(select_query, (report_id,))
             result = cursor.fetchone()
             return result[0] if result else None
 
